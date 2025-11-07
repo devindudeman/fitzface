@@ -1,0 +1,189 @@
+{
+  "name": "fitzface",
+  "author": "Devin Bernosky",
+  "version": "1.0.0",
+  "keywords": ["pebble-app"],
+  "private": true,
+  "dependencies": {
+    "pebble-clay": "^1.0.4"
+  },
+  "pebble": {
+    "displayName": "FitzFace",
+    "uuid": "55b267b1-a7f3-44a1-85ef-27ad56960793",
+    "sdkVersion": "3",
+    "enableMultiJS": true,
+    "targetPlatforms": [
+      "aplite",
+      "diorite"
+    ],
+    "watchapp": {
+      "watchface": true
+    },
+    "messageKeys": [
+      "TEMPERATURE",
+      "WIND_SPEED",
+      "UV_INDEX",
+      "WEATHER_CODE",
+      "WEATHER_CODE_TOMORROW",
+      "TEMP_MAX",
+      "TEMP_MIN",
+      "SUNRISE",
+      "SUNSET",
+      "WIND_MAX",
+      "AQI",
+      "TIDE_NEXT_TIME",
+      "TIDE_NEXT_TYPE",
+      "TIDE_NEXT_HEIGHT",
+      "LOCATION_NAME",
+      "LAST_UPDATE",
+      "ALERT_TEXT",
+      "ALERT_ACTIVE",
+      "CONFIG_TEMP_UNIT",
+      "CONFIG_WIND_UNIT",
+      "CONFIG_DIST_UNIT",
+      "CONFIG_SHOW_AQI",
+      "CONFIG_SHOW_UV",
+      "CONFIG_SHOW_WIND",
+      "CONFIG_SHOW_TIDE",
+      "CONFIG_SHOW_SUNRISE",
+      "CONFIG_TIDE_STATION",
+      "CONFIG_INVERT",
+      "MUNI_ENABLED",
+      "MUNI_API_KEY",
+      "MUNI_STOP_CODE",
+      "MUNI_ROUTE",
+      "MUNI_DIRECTION",
+      "MUNI_NEXT_1",
+      "MUNI_NEXT_2",
+      "POLLEN_ENABLED",
+      "POLLEN_API_KEY",
+      "POLLEN_TREE",
+      "POLLEN_GRASS",
+      "POLLEN_WEED"
+    ],
+    "resources": {
+      "media": [
+        {
+          "type": "bitmap",
+          "name": "ICON_SUN",
+          "file": "images/sun.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_MOON",
+          "file": "images/moon.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_CLOUD",
+          "file": "images/cloud.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_CLOUDS",
+          "file": "images/clouds.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_RAIN_LIGHT",
+          "file": "images/rain0.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_RAIN_MEDIUM",
+          "file": "images/rain1.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_RAIN_HEAVY",
+          "file": "images/rain2.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_SNOW",
+          "file": "images/snow.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_LIGHTNING",
+          "file": "images/lightning.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "ARROW_UP",
+          "file": "arrow_up.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "ARROW_DOWN",
+          "file": "arrow_down.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "WAVE",
+          "file": "wave.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_SUN_INVERTED",
+          "file": "images/sun_inverted.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_MOON_INVERTED",
+          "file": "images/moon_inverted.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_CLOUD_INVERTED",
+          "file": "images/cloud_inverted.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_CLOUDS_INVERTED",
+          "file": "images/clouds_inverted.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_RAIN_LIGHT_INVERTED",
+          "file": "images/rain0_inverted.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_RAIN_MEDIUM_INVERTED",
+          "file": "images/rain1_inverted.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_RAIN_HEAVY_INVERTED",
+          "file": "images/rain2_inverted.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_SNOW_INVERTED",
+          "file": "images/snow_inverted.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_LIGHTNING_INVERTED",
+          "file": "images/lightning_inverted.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "ARROW_UP_INVERTED",
+          "file": "arrow_up_inverted.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "ARROW_DOWN_INVERTED",
+          "file": "arrow_down_inverted.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "WAVE_INVERTED",
+          "file": "wave_inverted.png"
+        }
+      ]
+    }
+  }
+}

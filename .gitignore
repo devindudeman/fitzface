@@ -1,0 +1,56 @@
+# Pebble build artifacts
+build/
+*.pbw
+.lock-waf_*
+.waf-*
+.waf3-*
+
+# Temporary files
+temp_icons/
+*.xbm
+
+# Screenshots (keep only specific finals)
+pebble_screenshot*.png
+fitzface_*.png
+!fitzface_final.png
+!fitzface_with_icons.png
+final_*.png
+!final_clean.png
+
+# Node modules
+node_modules/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment variables (if any API keys stored)
+.env
+.env.local
+.env.*.local
+
+# Python (if any helper scripts)
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+venv/
+env/
+
+# Backup files
+*.bak
+*.backup
+*~.nib
