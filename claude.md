@@ -115,10 +115,10 @@ fitzface/
 
 ```
 ┌────────────────────────────┐  y=0
-│     San Francisco          │  Header: City Name (centered)
+│ 01  San Francisco      P0  │  Header: Rain% (left) | City Name (center) | Pollen (right)
 ├────────────────────────────┤  y=20 (DIVIDER)
 │ ☀    Wed, Nov 06       ☁   │  Today/Date/Tomorrow icons
-│ P0      19:09              │  Pollen (bottom-left) | Large Time (centered)
+│        19:09               │  Large Time (centered)
 │     High UV 11AM-3PM       │  Weather/Health Alert (y=80, dynamic, only when active)
 ├────────────────────────────┤  y=96 (DIVIDER - 3x3 GRID STARTS)
 │ 3,12 │  58°  │ 40|68       │  Row 1: MUNI buses | Current temp | Lo|Hi
@@ -129,6 +129,11 @@ fitzface/
 │ 3:59 │       │             │
 └────────────────────────────┘  y=168
 ```
+
+**Header Bar (y=0-20):**
+- **Left (x=4)**: Precipitation probability - 2-digit percentage (e.g., "01" = 1%, "89" = 89%)
+- **Center**: City name from GPS reverse geocoding
+- **Right (x=110)**: Pollen level - type + index (e.g., "T4" = Tree pollen level 4, "P0" = no pollen)
 
 **3x3 Grid Layout (48px × 24px cells):**
 - Top-left cell: MUNI bus countdown (e.g., "3,12" for 3 and 12 minutes)
@@ -381,7 +386,41 @@ if (code >= 66 && code <= 67) { /* Freezing rain */ }
 - **Empty response**: Bus may not be running (late night, holidays, route changes)
 - **Stale JavaScript**: Phone caches JS separately from .pbw - do full uninstall/reinstall if changes don't appear
 
-### 9. **Pollen Tracking System**
+### 9. **Precipitation Probability Display**
+
+**Data Source**: Open-Meteo hourly forecast
+- Automatically fetched with weather data every 30 minutes
+- Uses current hour's precipitation probability (0-100%)
+- No additional API calls required
+
+**Display** (`src/c/fitzface.c:376-383`):
+- Top-left corner of header (position: 4, 3)
+- Shows 2-digit percentage with leading zero (e.g., "01" = 1%, "89" = 89%, "100" = 100%)
+- Format: `%02d` ensures consistent width
+- Uses bold font (GOTHIC_14_BOLD) with inverted colors for header visibility
+
+**Data Processing** (`src/pkjs/index.js:849-852`):
+- Extracts `precipitation_probability[0]` from hourly forecast array
+- Sends as integer (0-100) via `PRECIPITATION_PROBABILITY` message key
+- Falls back to 0 if data unavailable
+
+**Persistence** (`src/c/fitzface.c:71, 560-561, 618`):
+- Stored in `PERSIST_KEY_PRECIPITATION_PROBABILITY` (key 25)
+- Survives watchface reloads
+- Updates every 30 minutes with weather sync
+
+**Color Theme Support** (`src/c/fitzface.c:846`):
+- Automatically updates text color when switching themes
+- White text on black header (normal mode)
+- Black text on white header (inverted mode)
+
+**Update Frequency**:
+- Syncs every 30 minutes with weather, AQI, tide, MUNI, and pollen requests
+- Always shows current hour's probability for immediate relevance
+
+---
+
+### 10. **Pollen Tracking System**
 
 **Configuration** (`src/pkjs/config.js:180-210`):
 - Enable/disable toggle for pollen display
@@ -402,11 +441,12 @@ if (code >= 66 && code <= 67) { /* Freezing rain */ }
   - 4: High
   - 5: Very High
 
-**Display** (`src/c/fitzface.c:344-370`):
-- Bottom-left of time box (position: 11, 64)
+**Display** (`src/c/fitzface.c:385-409`):
+- Top-right corner of header (position: 110, 3)
 - Shows highest pollen type with level (e.g., "T4", "G3", "W2")
 - Type indicators: T=Tree, G=Grass, W=Weed, P=Pollen (when all types are 0)
 - Always displays pollen field when pollen data is available (shows "P0" when all are 0)
+- Uses bold font (GOTHIC_14_BOLD) with inverted colors for header visibility
 
 **Alert Integration** (`src/pkjs/index.js:727-751`):
 - Triggers alert when any pollen type ≥4

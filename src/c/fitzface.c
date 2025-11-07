@@ -12,6 +12,7 @@
 #define KEY_SUNSET MESSAGE_KEY_SUNSET
 #define KEY_WIND_MAX MESSAGE_KEY_WIND_MAX
 #define KEY_AQI MESSAGE_KEY_AQI
+#define KEY_PRECIPITATION_PROBABILITY MESSAGE_KEY_PRECIPITATION_PROBABILITY
 #define KEY_TIDE_NEXT_TIME MESSAGE_KEY_TIDE_NEXT_TIME
 #define KEY_TIDE_NEXT_TYPE MESSAGE_KEY_TIDE_NEXT_TYPE
 #define KEY_TIDE_NEXT_HEIGHT MESSAGE_KEY_TIDE_NEXT_HEIGHT
@@ -68,6 +69,7 @@
 #define PERSIST_KEY_POLLEN_TREE 18
 #define PERSIST_KEY_POLLEN_GRASS 19
 #define PERSIST_KEY_POLLEN_WEED 20
+#define PERSIST_KEY_PRECIPITATION_PROBABILITY 25
 
 // Configuration persistence
 #define PERSIST_KEY_CONFIG_TEMP_UNIT 50
@@ -112,8 +114,11 @@ static GBitmap *s_temp_arrow_high_bitmap;
 // MUNI bus tracking (top-left grid cell)
 static TextLayer *s_muni_layer;
 
-// Pollen display (bottom-left of time box)
+// Pollen display (top right of header)
 static TextLayer *s_pollen_layer;
+
+// Precipitation probability (top left of header)
+static TextLayer *s_precip_layer;
 
 // Footer
 static TextLayer *s_tide_layer;
@@ -136,6 +141,7 @@ typedef struct {
   int temp_max;
   int temp_min;
   int aqi;
+  int precipitation_probability;  // 0-100%
   int tide_time;
   int tide_type; // 0 = low, 1 = high
   int sunrise;
@@ -367,7 +373,16 @@ static void update_weather_display() {
   // MUNI bus countdown updated separately (recalculated every minute)
   update_muni_display();
 
-  // Pollen display (bottom-left of time box) - show worst type + level
+  // Precipitation probability display (top left corner) - show as 2-digit percentage
+  static char precip_buffer[8];
+  if (s_weather_data.precipitation_probability >= 0) {
+    snprintf(precip_buffer, sizeof(precip_buffer), "%02d", s_weather_data.precipitation_probability);
+    text_layer_set_text(s_precip_layer, precip_buffer);
+  } else {
+    text_layer_set_text(s_precip_layer, "");
+  }
+
+  // Pollen display (top right corner) - show worst type + level
   static char pollen_buffer[8];
   if (s_weather_data.pollen_tree >= 0 || s_weather_data.pollen_grass >= 0 || s_weather_data.pollen_weed >= 0) {
     // Find highest pollen count
@@ -543,6 +558,8 @@ static void load_persisted_data() {
                                    persist_read_int(PERSIST_KEY_POLLEN_GRASS) : -1;
     s_weather_data.pollen_weed = persist_exists(PERSIST_KEY_POLLEN_WEED) ?
                                   persist_read_int(PERSIST_KEY_POLLEN_WEED) : -1;
+    s_weather_data.precipitation_probability = persist_exists(PERSIST_KEY_PRECIPITATION_PROBABILITY) ?
+                                                persist_read_int(PERSIST_KEY_PRECIPITATION_PROBABILITY) : 0;
   } else {
     // Default values
     s_weather_data.temperature = 0;
@@ -599,6 +616,7 @@ static void save_weather_data() {
   persist_write_int(PERSIST_KEY_POLLEN_TREE, s_weather_data.pollen_tree);
   persist_write_int(PERSIST_KEY_POLLEN_GRASS, s_weather_data.pollen_grass);
   persist_write_int(PERSIST_KEY_POLLEN_WEED, s_weather_data.pollen_weed);
+  persist_write_int(PERSIST_KEY_PRECIPITATION_PROBABILITY, s_weather_data.precipitation_probability);
 }
 
 // Load configuration
@@ -639,6 +657,7 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
   Tuple *weather_code_tuple = dict_find(iterator, KEY_WEATHER_CODE);
   Tuple *weather_code_tomorrow_tuple = dict_find(iterator, KEY_WEATHER_CODE_TOMORROW);
   Tuple *aqi_tuple = dict_find(iterator, KEY_AQI);
+  Tuple *precip_prob_tuple = dict_find(iterator, KEY_PRECIPITATION_PROBABILITY);
   Tuple *temp_max_tuple = dict_find(iterator, KEY_TEMP_MAX);
   Tuple *temp_min_tuple = dict_find(iterator, KEY_TEMP_MIN);
   Tuple *tide_time_tuple = dict_find(iterator, KEY_TIDE_NEXT_TIME);
@@ -674,6 +693,7 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
   if (weather_code_tuple) s_weather_data.weather_code = (int)weather_code_tuple->value->int32;
   if (weather_code_tomorrow_tuple) s_weather_data.weather_code_tomorrow = (int)weather_code_tomorrow_tuple->value->int32;
   if (aqi_tuple) s_weather_data.aqi = (int)aqi_tuple->value->int32;
+  if (precip_prob_tuple) s_weather_data.precipitation_probability = (int)precip_prob_tuple->value->int32;
   if (temp_max_tuple) s_weather_data.temp_max = (int)temp_max_tuple->value->int32;
   if (temp_min_tuple) s_weather_data.temp_min = (int)temp_min_tuple->value->int32;
   if (tide_time_tuple) s_weather_data.tide_time = (int)tide_time_tuple->value->int32;
@@ -822,7 +842,8 @@ static void apply_color_theme() {
   text_layer_set_text_color(s_uv_layer, get_foreground_color());
   text_layer_set_text_color(s_aqi_layer, get_foreground_color());
   text_layer_set_text_color(s_tide_layer, get_foreground_color());
-  text_layer_set_text_color(s_pollen_layer, get_foreground_color());
+  text_layer_set_text_color(s_pollen_layer, get_background_color());  // Inverted for header
+  text_layer_set_text_color(s_precip_layer, get_background_color());  // Inverted for header
   text_layer_set_text_color(s_sunrise_layer, get_foreground_color());
   text_layer_set_text_color(s_sunset_layer, get_foreground_color());
 
@@ -899,6 +920,17 @@ static void main_window_load(Window *window) {
   );
   layer_add_child(window_layer, text_layer_get_layer(s_location_layer));
 
+  // Precipitation probability (top left corner of header) - inverted colors for black header
+  s_precip_layer = create_text_layer_colored(
+    GRect(4, 3, 30, 14),
+    GTextAlignmentLeft,
+    fonts_get_system_font(FONT_KEY_GOTHIC_14_BOLD),
+    get_background_color(),  // Inverted: white text on black header, or black on white header
+    GColorClear
+  );
+  layer_add_child(window_layer, text_layer_get_layer(s_precip_layer));
+  text_layer_set_text(s_precip_layer, "");  // Empty by default
+
   // === TIME SECTION (26-80) ===
   // Date (centered) - smaller, above time (add this FIRST so icons appear on top)
   s_date_layer = create_text_layer(
@@ -928,11 +960,13 @@ static void main_window_load(Window *window) {
   );
   layer_add_child(window_layer, text_layer_get_layer(s_time_layer));
 
-  // Pollen display (bottom-left of time box)
-  s_pollen_layer = create_text_layer(
-    GRect(11, 64, 30, 14),
-    GTextAlignmentLeft,
-    fonts_get_system_font(FONT_KEY_GOTHIC_14)
+  // Pollen display (top right corner, next to city name) - inverted colors for black header
+  s_pollen_layer = create_text_layer_colored(
+    GRect(110, 3, 30, 14),
+    GTextAlignmentRight,
+    fonts_get_system_font(FONT_KEY_GOTHIC_14_BOLD),
+    get_background_color(),  // Inverted: white text on black header, or black on white header
+    GColorClear
   );
   layer_add_child(window_layer, text_layer_get_layer(s_pollen_layer));
   text_layer_set_text(s_pollen_layer, "");  // Empty by default
@@ -1127,6 +1161,7 @@ static void main_window_unload(Window *window) {
   text_layer_destroy(s_aqi_layer);
   text_layer_destroy(s_tide_layer);
   text_layer_destroy(s_pollen_layer);
+  text_layer_destroy(s_precip_layer);
   text_layer_destroy(s_sunrise_layer);
   text_layer_destroy(s_sunset_layer);
 }

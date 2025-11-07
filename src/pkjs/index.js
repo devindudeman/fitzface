@@ -846,6 +846,11 @@ function sendDataToWatch(location, weatherData, aqiData, tideData, muniData, pol
     message.WEATHER_CODE = weatherData.current.weather_code || 0;
   }
 
+  // Current precipitation probability (from hourly data - use current or next hour)
+  if (weatherData && weatherData.hourly && weatherData.hourly.precipitation_probability) {
+    message.PRECIPITATION_PROBABILITY = weatherData.hourly.precipitation_probability[0] || 0;
+  }
+
   if (weatherData && weatherData.daily) {
     message.TEMP_MAX = Math.round(weatherData.daily.temperature_2m_max[0]);
     message.TEMP_MIN = Math.round(weatherData.daily.temperature_2m_min[0]);

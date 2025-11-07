@@ -34,10 +34,14 @@ A high-density, data-rich watchface for the Pebble 2 Duo (B&W, 144x168), featuri
   - Extrapolates additional arrivals from bus interval when API returns fewer predictions
   - Configurable route, stop, and direction
   - Syncs with API every 30 minutes alongside weather data
+- **Precipitation Probability**: Current hour's chance of rain displayed as 2-digit percentage (e.g., "01" = 1%, "89" = 89%)
+  - Shown in top-left corner of header
+  - Updates every 30 minutes from Open-Meteo hourly forecast
 - **Weather Icons**: Current conditions + tomorrow's forecast icons
 - **Temperature Data**: Current, low, and high with visual indicators
 - **Wind & Environmental**: Wind speed, UV Index, Air Quality Index (AQI)
 - **Pollen Tracking**: Tree, grass, and weed pollen levels (0-5 scale) with type indicator
+  - Displayed in top-right corner of header (e.g., "T4" = Tree pollen level 4)
 - **Tide Information**: Next high/low tide with wave icon from NOAA
 - **Sunrise/Sunset Times**: Daily solar data with arrow indicators
 - **Configurable**: Show/hide individual data fields via settings
@@ -182,10 +186,10 @@ Optimized for Pebble hardware:
 
 ```
 ┌─────────────────────────┐
-│    San Francisco        │  ← Header: City Name (centered)
+│ 01  San Francisco   P0  │  ← Header: Rain% | City Name | Pollen
 ├─────────────────────────┤
 │ ☀  Wed, Nov 6      ☁    │  ← Today/Date/Tomorrow Weather Icons
-│ P0   19:09              │  ← Pollen (bottom-left) | Large Time Display
+│      19:09              │  ← Large Time Display
 │  High UV 11AM-3PM       │  ← Weather/Health Alert (dynamic, only when active)
 ├─────────────────────────┤
 │ 3,12 │  58°  │ 40|68    │  ← 3x3 Grid Row 1: MUNI | Current Temp | Lo|Hi
@@ -194,6 +198,11 @@ Optimized for Pebble hardware:
 │ 3:59 │       │          │
 └─────────────────────────┘
 ```
+
+**Header (Top Bar):**
+- **Left**: Precipitation probability (2-digit percentage, e.g., "01" = 1%, "89" = 89%)
+- **Center**: City name from GPS
+- **Right**: Pollen level (type + index, e.g., "T4" = Tree pollen level 4, "P0" = no pollen)
 
 **Grid Layout (3x3, 48px × 24px cells):**
 - **Row 1 (Temp)**: MUNI countdown | Current temp | Low|High temps
@@ -262,6 +271,7 @@ Communication between C and JavaScript:
 - `TEMPERATURE`, `TEMP_MAX`, `TEMP_MIN`
 - `WIND_SPEED`, `WIND_MAX`
 - `UV_INDEX`, `AQI`
+- `PRECIPITATION_PROBABILITY`
 - `WEATHER_CODE`, `WEATHER_CODE_TOMORROW`
 - `SUNRISE`, `SUNSET`
 
