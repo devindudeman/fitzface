@@ -2,6 +2,17 @@
 
 A high-density, data-rich watchface for the Pebble 2 Duo (B&W, 144x168), featuring weather, environmental data, tide information, and real-time SF MUNI bus tracking.
 
+<table>
+  <tr>
+    <td><img src="screenshots/normal.png" alt="Normal Theme" width="200"/></td>
+    <td><img src="screenshots/inverted.png" alt="Inverted Theme" width="200"/></td>
+  </tr>
+  <tr>
+    <td align="center"><b>Normal Theme</b></td>
+    <td align="center"><b>Inverted Theme</b></td>
+  </tr>
+</table>
+
 ## Features
 
 - **City Name Display**: Shows your current location name via GPS reverse geocoding

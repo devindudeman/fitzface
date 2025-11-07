@@ -9,13 +9,12 @@ build/
 temp_icons/
 *.xbm
 
-# Screenshots (keep only specific finals)
+# Screenshots (keep only screenshots/ directory)
 pebble_screenshot*.png
 fitzface_*.png
-!fitzface_final.png
-!fitzface_with_icons.png
 final_*.png
-!final_clean.png
+screenshot.png
+!screenshots/*.png
 
 # Node modules
 node_modules/
