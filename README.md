@@ -13,6 +13,11 @@ A high-density, data-rich watchface for the Pebble 2 Duo (B&W, 144x168), featuri
   </tr>
 </table>
 
+### Feature Guide
+<p align="center">
+  <img src="screenshots/annotated.png" alt="Feature Guide" width="400"/>
+</p>
+
 ## Features
 
 - **City Name Display**: Shows your current location name via GPS reverse geocoding
