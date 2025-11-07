@@ -2,6 +2,7 @@
   "name": "fitzface",
   "author": "Devin Bernosky",
   "version": "1.0.0",
+  "description": "High-density data-rich watchface featuring weather, MUNI bus tracking, tides, air quality, pollen levels, and smart health alerts for Pebble smartwatches.",
   "keywords": ["pebble-app"],
   "private": true,
   "dependencies": {
@@ -16,9 +17,17 @@
       "aplite",
       "diorite"
     ],
+    "companyName": "Devin Bernosky",
+    "versionLabel": "1.0.0",
+    "shortName": "FitzFace",
+    "longName": "FitzFace - Weather, MUNI, Tides & Pollen",
     "watchapp": {
       "watchface": true
     },
+    "capabilities": [
+      "location",
+      "configurable"
+    ],
     "messageKeys": [
       "TEMPERATURE",
       "WIND_SPEED",
@@ -53,8 +62,12 @@
       "MUNI_STOP_CODE",
       "MUNI_ROUTE",
       "MUNI_DIRECTION",
-      "MUNI_NEXT_1",
-      "MUNI_NEXT_2",
+      "MUNI_TIMESTAMP_1",
+      "MUNI_TIMESTAMP_2",
+      "MUNI_TIMESTAMP_3",
+      "MUNI_TIMESTAMP_4",
+      "MUNI_TIMESTAMP_5",
+      "MUNI_TIMESTAMP_6",
       "POLLEN_ENABLED",
       "POLLEN_API_KEY",
       "POLLEN_TREE",
@@ -63,6 +76,12 @@
     ],
     "resources": {
       "media": [
+        {
+          "type": "bitmap",
+          "name": "MENU_ICON",
+          "file": "menu_icon.png",
+          "menuIcon": true
+        },
         {
           "type": "bitmap",
           "name": "ICON_SUN",

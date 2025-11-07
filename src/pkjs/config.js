@@ -1,18 +1,16 @@
 module.exports = [
   {
     "type": "heading",
-    "defaultValue": "FitzFace Configuration"
-  },
-  {
-    "type": "text",
-    "defaultValue": "Customize your high-density watchface with weather, environmental data, and tides."
+    "defaultValue": "FitzFace Configuration",
+    "size": 1
   },
   {
     "type": "section",
     "items": [
       {
         "type": "heading",
-        "defaultValue": "Units & Display"
+        "defaultValue": "Display",
+        "size": 3
       },
       {
         "type": "radiogroup",
@@ -21,11 +19,11 @@ module.exports = [
         "defaultValue": "F",
         "options": [
           {
-            "label": "Fahrenheit (°F)",
+            "label": "Fahrenheit",
             "value": "F"
           },
           {
-            "label": "Celsius (°C)",
+            "label": "Celsius",
             "value": "C"
           }
         ]
@@ -44,26 +42,19 @@ module.exports = [
     "items": [
       {
         "type": "heading",
-        "defaultValue": "Tide Station"
-      },
-      {
-        "type": "text",
-        "defaultValue": "Enter your NOAA tide station ID. Find stations at tidesandcurrents.noaa.gov"
+        "defaultValue": "Tide Station",
+        "size": 3
       },
       {
         "type": "input",
         "messageKey": "TIDE_STATION",
         "label": "NOAA Station ID",
-        "description": "Default: 9414290 (San Francisco, CA)",
+        "description": "Find your station at tidesandcurrents.noaa.gov<br><small>San Francisco: 9414290 | New York: 8518750 | Seattle: 9447130</small>",
         "defaultValue": "9414290",
         "attributes": {
           "placeholder": "e.g., 9414290",
           "type": "text"
         }
-      },
-      {
-        "type": "text",
-        "defaultValue": "Common stations:\n- 9414290 - San Francisco, CA\n- 8518750 - The Battery, NY\n- 9447130 - Seattle, WA\n- 8729108 - Panama City Beach, FL\n- 9410170 - San Diego, CA"
       }
     ]
   },
@@ -72,26 +63,24 @@ module.exports = [
     "items": [
       {
         "type": "heading",
-        "defaultValue": "MUNI Bus Tracking"
-      },
-      {
-        "type": "text",
-        "defaultValue": "Display real-time SF MUNI bus arrivals. Get your free API key at 511.org/open-data/token\n\nFind your stop code at 511.org/transit/agencies/stop-id"
+        "defaultValue": "SF MUNI Bus Tracking",
+        "size": 3
       },
       {
         "type": "toggle",
         "messageKey": "MUNI_ENABLED",
-        "label": "Show Bus Countdown",
+        "label": "Enable Bus Countdown",
+        "description": "Show real-time SF MUNI arrival times",
         "defaultValue": false
       },
       {
         "type": "input",
         "messageKey": "MUNI_API_KEY",
         "label": "511.org API Key",
-        "description": "Required for bus predictions",
+        "description": "Get your free key at <strong>511.org/open-data/token</strong>",
         "defaultValue": "",
         "attributes": {
-          "placeholder": "Your API key from 511.org",
+          "placeholder": "API key",
           "type": "text"
         }
       },
@@ -99,10 +88,10 @@ module.exports = [
         "type": "input",
         "messageKey": "MUNI_STOP_CODE",
         "label": "Stop Code",
-        "description": "5-digit code from 511.org",
+        "description": "Find your 5-digit code at <strong>511.org/transit/agencies/stop-id</strong>",
         "defaultValue": "",
         "attributes": {
-          "placeholder": "5-digit stop code",
+          "placeholder": "5-digit code",
           "type": "text"
         }
       },
@@ -110,10 +99,10 @@ module.exports = [
         "type": "input",
         "messageKey": "MUNI_ROUTE",
         "label": "Route Number",
-        "description": "Bus line to track (e.g., 38R, 44, N)",
+        "description": "Bus line to track (e.g., 1, 38R, N)",
         "defaultValue": "",
         "attributes": {
-          "placeholder": "e.g., 1, 38R, N",
+          "placeholder": "e.g., 38R",
           "type": "text"
         }
       },
@@ -124,11 +113,11 @@ module.exports = [
         "defaultValue": "IB",
         "options": [
           {
-            "label": "Inbound (IB)",
+            "label": "Inbound",
             "value": "IB"
           },
           {
-            "label": "Outbound (OB)",
+            "label": "Outbound",
             "value": "OB"
           }
         ]
@@ -140,26 +129,24 @@ module.exports = [
     "items": [
       {
         "type": "heading",
-        "defaultValue": "Pollen Tracking"
-      },
-      {
-        "type": "text",
-        "defaultValue": "Display pollen levels for tree, grass, and weed. Get your free API key at console.cloud.google.com/apis/library/pollen.googleapis.com"
+        "defaultValue": "Pollen Tracking",
+        "size": 3
       },
       {
         "type": "toggle",
         "messageKey": "POLLEN_ENABLED",
-        "label": "Show Pollen Count",
+        "label": "Enable Pollen Data",
+        "description": "Show tree, grass, and weed pollen levels",
         "defaultValue": false
       },
       {
         "type": "input",
         "messageKey": "POLLEN_API_KEY",
         "label": "Google Pollen API Key",
-        "description": "Required for pollen data",
+        "description": "Get your free key at <strong>console.cloud.google.com</strong><br><small>Enable the Pollen API in Google Cloud Console</small>",
         "defaultValue": "",
         "attributes": {
-          "placeholder": "Your API key from Google Cloud",
+          "placeholder": "API key",
           "type": "text"
         }
       }
@@ -170,11 +157,34 @@ module.exports = [
     "items": [
       {
         "type": "heading",
-        "defaultValue": "About"
+        "defaultValue": "About FitzFace",
+        "size": 3
       },
       {
         "type": "text",
-        "defaultValue": "FitzFace v1.0\nDeveloper: Devin Bernosky\n\nA high-density, data-rich watchface for Pebble.\n\nData sources:\n- Weather: Open-Meteo API\n- Air Quality: Open-Meteo\n- Tides: NOAA CO-OPS"
+        "defaultValue": "<strong>Version 1.0.0</strong><br>Developer: Devin Bernosky<br>License: GPL-3.0"
+      },
+      {
+        "type": "text",
+        "defaultValue": "High-density watchface featuring weather, MUNI bus tracking, tides, air quality, pollen levels, and smart health alerts."
+      },
+      {
+        "type": "heading",
+        "defaultValue": "Data Sources",
+        "size": 5
+      },
+      {
+        "type": "text",
+        "defaultValue": "<small>Weather: Open-Meteo | AQI: Open-Meteo | Tides: NOAA<br>MUNI: 511.org | Pollen: Google | Location: OpenStreetMap</small>"
+      },
+      {
+        "type": "heading",
+        "defaultValue": "Links",
+        "size": 5
+      },
+      {
+        "type": "text",
+        "defaultValue": "<a href='https://github.com/devindudeman/fitzface' target='_blank'>GitHub Repository</a>"
       }
     ]
   },

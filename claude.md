@@ -317,24 +317,47 @@ if (code >= 66 && code <= 67) { /* Freezing rain */ }
 - Route selection (e.g., "38R", "1", "N")
 - Direction selection (Inbound/Outbound)
 
-**API Integration** (`src/pkjs/index.js:340-449`):
+**API Integration** (`src/pkjs/index.js:340-468`):
 - Fetches from 511.org SIRI StopMonitoring API
 - Authenticates with API key in URL parameter
 - Filters predictions by route and direction
 - Handles multiple time field names (AimedArrivalTime, ExpectedArrivalTime, etc.)
 - Sorts arrivals chronologically
+- **Timestamp-Based Architecture**: Stores Unix timestamps instead of relative minutes for accurate countdown
+
+**Extrapolation Logic** (`src/pkjs/index.js:449-468`):
+- **Problem Solved**: 511.org API typically returns only 3 predictions (~15 minutes), but watchface syncs every 30 minutes
+- **Solution**: Mathematical extrapolation to ensure continuous coverage
+- **Algorithm**:
+  1. Receives 3 real bus arrival timestamps from API (e.g., 3min, 9min, 15min)
+  2. Calculates average interval: `totalInterval / (count - 1)` (e.g., 6 minutes)
+  3. Extrapolates additional timestamps: `lastTimestamp + avgInterval` (e.g., 21min, 27min, 33min)
+  4. Returns 6 total timestamps covering ~36 minutes
+- **Result**: Full 30-minute sync window coverage with no data gaps
 
 **Data Processing**:
-- Calculates minutes until arrival from response timestamp
-- Returns next 2 bus arrival times
-- Filters out past arrivals (only future predictions)
-- Returns -1 for no data (displays smiley face placeholder)
+- Returns 6 Unix timestamps (seconds since epoch)
+- JavaScript sends timestamps via `MUNI_TIMESTAMP_1` through `MUNI_TIMESTAMP_6` message keys
+- Returns 0 for missing data (displays smiley face placeholder)
 
-**Display** (`src/c/fitzface.c:314-328`):
+**Watch-Side Display** (`src/c/fitzface.c:300-329`):
+- Stores 6 timestamps in `time_t muni_timestamps[6]` array
+- **Every-Minute Recalculation** in `update_muni_display()`:
+  1. Gets current time: `time(NULL)`
+  2. Loops through all 6 timestamps
+  3. Calculates minutes remaining: `(timestamp - now) / 60`
+  4. Filters out past arrivals (only shows future buses)
+  5. Displays next 2 future buses
+- **Display Formats**:
+  - Two buses: "3, 12" (3 and 12 minutes)
+  - One bus: "5" (5 minutes)
+  - No buses: ":)" (placeholder)
 - Top-left grid cell (0-48px, 96-116px)
-- Format: "3, 12" for 3 and 12 minutes
-- Single bus: "5" for 5 minutes
-- No data: ":)" placeholder
+
+**Persistence** (`src/c/fitzface.c:527-537, 587-597`):
+- Saves all 6 timestamps to persistent storage
+- Survives watchface reloads and phone disconnections
+- Uses non-sequential persistence keys due to package.json ordering
 
 **Configuration Input Handling** (`src/pkjs/index.js:783-789`):
 - Trims whitespace from API key, stop code, and route inputs
@@ -342,13 +365,21 @@ if (code >= 66 && code <= 67) { /* Freezing rain */ }
 - Stores configuration in localStorage for persistence
 
 **Update Frequency**:
-- MUNI predictions fetched every 30 minutes with weather data
+- **API Sync**: Every 30 minutes (at :00 and :30) with weather data
+- **Display Update**: Every minute via tick handler
 - Updates in parallel with weather, AQI, and tide requests
+
+**Technical Advantages**:
+- **Accurate**: Countdown always shows correct time, not frozen values
+- **Efficient**: No additional API calls needed beyond 30-minute sync
+- **Robust**: Extrapolation handles API limitations transparently
+- **Persistent**: Timestamps survive app reloads
 
 **Common Issues**:
 - **401 Unauthorized**: Check API key for leading/trailing whitespace
 - **No predictions**: Verify stop code, route, and direction are correct
 - **Empty response**: Bus may not be running (late night, holidays, route changes)
+- **Stale JavaScript**: Phone caches JS separately from .pbw - do full uninstall/reinstall if changes don't appear
 
 ### 9. **Pollen Tracking System**
 

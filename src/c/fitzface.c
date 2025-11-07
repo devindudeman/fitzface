@@ -30,9 +30,13 @@
 #define KEY_CONFIG_SHOW_SUNRISE MESSAGE_KEY_CONFIG_SHOW_SUNRISE
 #define KEY_CONFIG_INVERT MESSAGE_KEY_CONFIG_INVERT
 
-// MUNI Keys
-#define KEY_MUNI_NEXT_1 MESSAGE_KEY_MUNI_NEXT_1
-#define KEY_MUNI_NEXT_2 MESSAGE_KEY_MUNI_NEXT_2
+// MUNI Keys (timestamps)
+#define KEY_MUNI_TIMESTAMP_1 MESSAGE_KEY_MUNI_TIMESTAMP_1
+#define KEY_MUNI_TIMESTAMP_2 MESSAGE_KEY_MUNI_TIMESTAMP_2
+#define KEY_MUNI_TIMESTAMP_3 MESSAGE_KEY_MUNI_TIMESTAMP_3
+#define KEY_MUNI_TIMESTAMP_4 MESSAGE_KEY_MUNI_TIMESTAMP_4
+#define KEY_MUNI_TIMESTAMP_5 MESSAGE_KEY_MUNI_TIMESTAMP_5
+#define KEY_MUNI_TIMESTAMP_6 MESSAGE_KEY_MUNI_TIMESTAMP_6
 
 // Pollen Keys
 #define KEY_POLLEN_TREE MESSAGE_KEY_POLLEN_TREE
@@ -55,8 +59,12 @@
 #define PERSIST_KEY_LOCATION 12
 #define PERSIST_KEY_ALERT_TEXT 14
 #define PERSIST_KEY_ALERT_ACTIVE 15
-#define PERSIST_KEY_MUNI_NEXT_1 16
-#define PERSIST_KEY_MUNI_NEXT_2 17
+#define PERSIST_KEY_MUNI_TIMESTAMP_1 16
+#define PERSIST_KEY_MUNI_TIMESTAMP_2 17
+#define PERSIST_KEY_MUNI_TIMESTAMP_3 21
+#define PERSIST_KEY_MUNI_TIMESTAMP_4 22
+#define PERSIST_KEY_MUNI_TIMESTAMP_5 23
+#define PERSIST_KEY_MUNI_TIMESTAMP_6 24
 #define PERSIST_KEY_POLLEN_TREE 18
 #define PERSIST_KEY_POLLEN_GRASS 19
 #define PERSIST_KEY_POLLEN_WEED 20
@@ -135,8 +143,7 @@ typedef struct {
   char location[32];
   char alert_text[64];
   bool alert_active;
-  int muni_next_1;  // Minutes until next bus (-1 = no data)
-  int muni_next_2;  // Minutes until second bus (-1 = no data)
+  time_t muni_timestamps[6];  // Unix timestamps for next 6 buses (0 = no data)
   int pollen_tree;   // Tree pollen 0-5 (-1 = no data)
   int pollen_grass;  // Grass pollen 0-5 (-1 = no data)
   int pollen_weed;   // Weed pollen 0-5 (-1 = no data)
@@ -169,6 +176,7 @@ static void load_config();
 static void save_config();
 static void request_weather_update();
 static void update_weather_display();
+static void update_muni_display();
 static void apply_color_theme();
 
 // Color helpers for inversion support
@@ -289,6 +297,37 @@ static void update_time() {
   text_layer_set_text(s_date_layer, s_date_buffer);
 }
 
+// Update MUNI bus countdown display (recalculated every minute from timestamps)
+static void update_muni_display() {
+  static char muni_buffer[16];
+  time_t now = time(NULL);
+  int future_buses[6];
+  int count = 0;
+
+  // Find all future arrivals from timestamps
+  for (int i = 0; i < 6; i++) {
+    if (s_weather_data.muni_timestamps[i] > 0) {
+      int minutes = (s_weather_data.muni_timestamps[i] - now) / 60;
+      if (minutes > 0) {  // Only future arrivals
+        future_buses[count++] = minutes;
+      }
+    }
+  }
+
+  // Display next 2 future buses
+  if (count >= 2) {
+    snprintf(muni_buffer, sizeof(muni_buffer), "%d, %d",
+             future_buses[0], future_buses[1]);
+  } else if (count == 1) {
+    snprintf(muni_buffer, sizeof(muni_buffer), "%d", future_buses[0]);
+  } else {
+    // No future buses - show placeholder
+    strcpy(muni_buffer, ":)");
+  }
+
+  text_layer_set_text(s_muni_layer, muni_buffer);
+}
+
 // Update weather display
 static void update_weather_display() {
   static char wind_buffer[32];
@@ -325,21 +364,8 @@ static void update_weather_display() {
     layer_set_hidden(text_layer_get_layer(s_alert_layer), true);
   }
 
-  // MUNI bus countdown (top-left grid cell)
-  static char muni_buffer[16];
-  if (s_weather_data.muni_next_1 >= 0 && s_weather_data.muni_next_2 >= 0) {
-    // Both buses available - show "3, 12" format
-    snprintf(muni_buffer, sizeof(muni_buffer), "%d, %d",
-             s_weather_data.muni_next_1, s_weather_data.muni_next_2);
-    text_layer_set_text(s_muni_layer, muni_buffer);
-  } else if (s_weather_data.muni_next_1 >= 0) {
-    // Only first bus available
-    snprintf(muni_buffer, sizeof(muni_buffer), "%d", s_weather_data.muni_next_1);
-    text_layer_set_text(s_muni_layer, muni_buffer);
-  } else {
-    // No MUNI data - show placeholder
-    text_layer_set_text(s_muni_layer, ":)");
-  }
+  // MUNI bus countdown updated separately (recalculated every minute)
+  update_muni_display();
 
   // Pollen display (bottom-left of time box) - show worst type + level
   static char pollen_buffer[8];
@@ -448,6 +474,7 @@ static void update_weather_display() {
 // Tick handler - called every minute
 static void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
   update_time();
+  update_muni_display();  // Recalculate MUNI countdown every minute
 
   // Request weather update every 30 minutes (at :00 and :30)
   if (tick_time->tm_min == 0 || tick_time->tm_min == 30) {
@@ -496,11 +523,18 @@ static void load_persisted_data() {
       s_weather_data.alert_active = persist_read_bool(PERSIST_KEY_ALERT_ACTIVE);
     }
 
-    // Load MUNI data
-    s_weather_data.muni_next_1 = persist_exists(PERSIST_KEY_MUNI_NEXT_1) ?
-                                  persist_read_int(PERSIST_KEY_MUNI_NEXT_1) : -1;
-    s_weather_data.muni_next_2 = persist_exists(PERSIST_KEY_MUNI_NEXT_2) ?
-                                  persist_read_int(PERSIST_KEY_MUNI_NEXT_2) : -1;
+    // Load MUNI timestamps
+    for (int i = 0; i < 6; i++) {
+      int persist_key = PERSIST_KEY_MUNI_TIMESTAMP_1 + i;
+      // Skip indices 2-5 since they use non-sequential keys
+      if (i == 2) persist_key = PERSIST_KEY_MUNI_TIMESTAMP_3;
+      else if (i == 3) persist_key = PERSIST_KEY_MUNI_TIMESTAMP_4;
+      else if (i == 4) persist_key = PERSIST_KEY_MUNI_TIMESTAMP_5;
+      else if (i == 5) persist_key = PERSIST_KEY_MUNI_TIMESTAMP_6;
+
+      s_weather_data.muni_timestamps[i] = persist_exists(persist_key) ?
+                                           persist_read_int(persist_key) : 0;
+    }
 
     // Load pollen data
     s_weather_data.pollen_tree = persist_exists(PERSIST_KEY_POLLEN_TREE) ?
@@ -522,8 +556,9 @@ static void load_persisted_data() {
     s_weather_data.tide_type = 0;
     s_weather_data.sunrise = 0;
     s_weather_data.sunset = 0;
-    s_weather_data.muni_next_1 = -1;  // No MUNI data
-    s_weather_data.muni_next_2 = -1;
+    for (int i = 0; i < 6; i++) {
+      s_weather_data.muni_timestamps[i] = 0;  // No MUNI data
+    }
     s_weather_data.pollen_tree = -1;   // No pollen data
     s_weather_data.pollen_grass = -1;
     s_weather_data.pollen_weed = -1;
@@ -548,8 +583,19 @@ static void save_weather_data() {
   persist_write_string(PERSIST_KEY_LOCATION, s_weather_data.location);
   persist_write_string(PERSIST_KEY_ALERT_TEXT, s_weather_data.alert_text);
   persist_write_bool(PERSIST_KEY_ALERT_ACTIVE, s_weather_data.alert_active);
-  persist_write_int(PERSIST_KEY_MUNI_NEXT_1, s_weather_data.muni_next_1);
-  persist_write_int(PERSIST_KEY_MUNI_NEXT_2, s_weather_data.muni_next_2);
+
+  // Save MUNI timestamps
+  for (int i = 0; i < 6; i++) {
+    int persist_key = PERSIST_KEY_MUNI_TIMESTAMP_1 + i;
+    // Skip indices 2-5 since they use non-sequential keys
+    if (i == 2) persist_key = PERSIST_KEY_MUNI_TIMESTAMP_3;
+    else if (i == 3) persist_key = PERSIST_KEY_MUNI_TIMESTAMP_4;
+    else if (i == 4) persist_key = PERSIST_KEY_MUNI_TIMESTAMP_5;
+    else if (i == 5) persist_key = PERSIST_KEY_MUNI_TIMESTAMP_6;
+
+    persist_write_int(persist_key, s_weather_data.muni_timestamps[i]);
+  }
+
   persist_write_int(PERSIST_KEY_POLLEN_TREE, s_weather_data.pollen_tree);
   persist_write_int(PERSIST_KEY_POLLEN_GRASS, s_weather_data.pollen_grass);
   persist_write_int(PERSIST_KEY_POLLEN_WEED, s_weather_data.pollen_weed);
@@ -602,8 +648,12 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
   Tuple *location_tuple = dict_find(iterator, KEY_LOCATION_NAME);
   Tuple *alert_text_tuple = dict_find(iterator, KEY_ALERT_TEXT);
   Tuple *alert_active_tuple = dict_find(iterator, KEY_ALERT_ACTIVE);
-  Tuple *muni_next_1_tuple = dict_find(iterator, KEY_MUNI_NEXT_1);
-  Tuple *muni_next_2_tuple = dict_find(iterator, KEY_MUNI_NEXT_2);
+  Tuple *muni_timestamp_1_tuple = dict_find(iterator, KEY_MUNI_TIMESTAMP_1);
+  Tuple *muni_timestamp_2_tuple = dict_find(iterator, KEY_MUNI_TIMESTAMP_2);
+  Tuple *muni_timestamp_3_tuple = dict_find(iterator, KEY_MUNI_TIMESTAMP_3);
+  Tuple *muni_timestamp_4_tuple = dict_find(iterator, KEY_MUNI_TIMESTAMP_4);
+  Tuple *muni_timestamp_5_tuple = dict_find(iterator, KEY_MUNI_TIMESTAMP_5);
+  Tuple *muni_timestamp_6_tuple = dict_find(iterator, KEY_MUNI_TIMESTAMP_6);
   Tuple *pollen_tree_tuple = dict_find(iterator, KEY_POLLEN_TREE);
   Tuple *pollen_grass_tuple = dict_find(iterator, KEY_POLLEN_GRASS);
   Tuple *pollen_weed_tuple = dict_find(iterator, KEY_POLLEN_WEED);
@@ -633,8 +683,18 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
   if (location_tuple) {
     snprintf(s_weather_data.location, sizeof(s_weather_data.location), "%s", location_tuple->value->cstring);
   }
-  if (muni_next_1_tuple) s_weather_data.muni_next_1 = (int)muni_next_1_tuple->value->int32;
-  if (muni_next_2_tuple) s_weather_data.muni_next_2 = (int)muni_next_2_tuple->value->int32;
+
+  // Update MUNI timestamps
+  Tuple *muni_tuples[6] = {
+    muni_timestamp_1_tuple, muni_timestamp_2_tuple, muni_timestamp_3_tuple,
+    muni_timestamp_4_tuple, muni_timestamp_5_tuple, muni_timestamp_6_tuple
+  };
+  for (int i = 0; i < 6; i++) {
+    if (muni_tuples[i]) {
+      s_weather_data.muni_timestamps[i] = (time_t)muni_tuples[i]->value->int32;
+    }
+  }
+
   if (pollen_tree_tuple) s_weather_data.pollen_tree = (int)pollen_tree_tuple->value->int32;
   if (pollen_grass_tuple) s_weather_data.pollen_grass = (int)pollen_grass_tuple->value->int32;
   if (pollen_weed_tuple) s_weather_data.pollen_weed = (int)pollen_weed_tuple->value->int32;
@@ -840,6 +900,14 @@ static void main_window_load(Window *window) {
   layer_add_child(window_layer, text_layer_get_layer(s_location_layer));
 
   // === TIME SECTION (26-80) ===
+  // Date (centered) - smaller, above time (add this FIRST so icons appear on top)
+  s_date_layer = create_text_layer(
+    GRect(0, 28, bounds.size.w, 14),
+    GTextAlignmentCenter,
+    fonts_get_system_font(FONT_KEY_GOTHIC_14)
+  );
+  layer_add_child(window_layer, text_layer_get_layer(s_date_layer));
+
   // Weather icon (top-left corner of time box)
   s_weather_icon_layer = bitmap_layer_create(GRect(6, 28, 20, 20));
   bitmap_layer_set_background_color(s_weather_icon_layer, GColorClear);
@@ -851,14 +919,6 @@ static void main_window_load(Window *window) {
   bitmap_layer_set_background_color(s_weather_icon_tomorrow_layer, GColorClear);
   bitmap_layer_set_compositing_mode(s_weather_icon_tomorrow_layer, get_bitmap_compositing_mode());
   layer_add_child(window_layer, bitmap_layer_get_layer(s_weather_icon_tomorrow_layer));
-
-  // Date (centered) - smaller, above time
-  s_date_layer = create_text_layer(
-    GRect(0, 28, bounds.size.w, 14),
-    GTextAlignmentCenter,
-    fonts_get_system_font(FONT_KEY_GOTHIC_14)
-  );
-  layer_add_child(window_layer, text_layer_get_layer(s_date_layer));
 
   // Extra large time display (centered) - use biggest font
   s_time_layer = create_text_layer(

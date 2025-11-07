@@ -23,9 +23,12 @@ A high-density, data-rich watchface for the Pebble 2 Duo (B&W, 144x168), featuri
   - Shows time ranges (e.g., "Heavy Rain 3PM-6PM", "High UV 11AM-3PM", "High Tree Pollen")
   - Vibrates once when new alert detected
 - **MUNI Bus Countdown**: Real-time SF MUNI bus arrivals (via 511.org API)
-  - Shows next 2 bus arrival times in minutes
+  - Shows next 2 bus arrival times in minutes (e.g., "3, 12")
+  - Countdown updates every minute on watch for accurate timing
+  - Stores 6 bus arrival timestamps to cover 30-minute sync window
+  - Extrapolates additional arrivals from bus interval when API returns fewer predictions
   - Configurable route, stop, and direction
-  - Updates every 30 minutes with weather data
+  - Syncs with API every 30 minutes alongside weather data
 - **Weather Icons**: Current conditions + tomorrow's forecast icons
 - **Temperature Data**: Current, low, and high with visual indicators
 - **Wind & Environmental**: Wind speed, UV Index, Air Quality Index (AQI)
@@ -136,7 +139,14 @@ Real-time SF MUNI bus countdown timer (optional):
    - Enter route number (e.g., "38R", "1", "N")
    - Select direction: Inbound (IB) or Outbound (OB)
 
-**Display**: Shows next 2 bus arrival times in minutes (e.g., "3, 12") in the top-left grid cell
+**How It Works**:
+- JavaScript fetches real-time predictions from 511.org API (typically 3 buses)
+- Calculates average interval between buses (e.g., 6 minutes)
+- Extrapolates up to 6 Unix timestamps to ensure 30+ minutes of coverage
+- Watch stores timestamps and recalculates countdown every minute
+- Always shows next 2 future buses, automatically hiding passed arrivals
+
+**Display**: Shows next 2 bus arrival times in minutes (e.g., "3, 12") in the top-left grid cell, updating every minute
 
 ### Pollen Tracking
 Display pollen levels for allergy monitoring (optional):
@@ -254,7 +264,7 @@ Communication between C and JavaScript:
 - `TIDE_NEXT_TIME`, `TIDE_NEXT_TYPE`, `TIDE_NEXT_HEIGHT`
 
 **MUNI Data:**
-- `MUNI_NEXT_1`, `MUNI_NEXT_2` (minutes until next buses, -1 = no data)
+- `MUNI_TIMESTAMP_1` through `MUNI_TIMESTAMP_6` (Unix timestamps for next 6 buses, 0 = no data)
 
 **Configuration:**
 - `CONFIG_TEMP_UNIT`, `CONFIG_SHOW_AQI`, `CONFIG_SHOW_UV`

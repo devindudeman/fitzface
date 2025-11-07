@@ -408,7 +408,7 @@ function parseMuniPredictions(response) {
     var targetRoute = CONFIG.MUNI_ROUTE.toUpperCase();
     var targetDirection = CONFIG.MUNI_DIRECTION || 'IB';
 
-    // Filter by route and direction, calculate minutes
+    // Filter by route and direction, store timestamps for next 40 minutes
     for (var i = 0; i < visits.length; i++) {
       var journey = visits[i].MonitoredVehicleJourney;
       var lineRef = journey.LineRef;
@@ -424,25 +424,57 @@ function parseMuniPredictions(response) {
         if (expectedTime) {
           var arrivalTime = new Date(expectedTime);
           var minutes = Math.floor((arrivalTime - responseTime) / 60000);
-          if (minutes >= 0) {  // Only future arrivals
-            arrivals.push(minutes);
+          // Store arrivals in next 40 minutes (covers 30-min sync window + buffer)
+          if (minutes >= 0 && minutes <= 40) {
+            arrivals.push({
+              timestamp: Math.floor(arrivalTime.getTime() / 1000),  // Unix timestamp
+              minutes: minutes  // For debugging
+            });
           }
         }
       }
     }
 
-    // Sort by time
-    arrivals.sort(function(a, b) { return a - b; });
+    // Sort by timestamp
+    arrivals.sort(function(a, b) { return a.timestamp - b.timestamp; });
 
     if (arrivals.length === 0) {
       console.log('No matching MUNI arrivals found for ' + targetRoute + ' ' + targetDirection);
       return null;
     }
 
-    console.log('Found ' + arrivals.length + ' MUNI arrivals: ' + arrivals.join(', '));
+    console.log('Found ' + arrivals.length + ' MUNI arrivals in next 40min: ' +
+                arrivals.map(function(a) { return a.minutes + 'min'; }).join(', '));
+
+    // Extrapolate additional timestamps if we have fewer than 6
+    if (arrivals.length >= 2 && arrivals.length < 6) {
+      // Calculate average interval between buses (in seconds)
+      var totalInterval = 0;
+      for (var i = 1; i < arrivals.length; i++) {
+        totalInterval += arrivals[i].timestamp - arrivals[i-1].timestamp;
+      }
+      var avgInterval = Math.round(totalInterval / (arrivals.length - 1));
+
+      console.log('Extrapolating with avg interval: ' + Math.round(avgInterval/60) + ' min');
+
+      // Extrapolate up to 6 total timestamps
+      var lastTimestamp = arrivals[arrivals.length - 1].timestamp;
+      while (arrivals.length < 6) {
+        lastTimestamp += avgInterval;
+        arrivals.push({ timestamp: lastTimestamp, minutes: -1 });
+      }
+
+      console.log('After extrapolation: ' + arrivals.length + ' timestamps');
+    }
+
+    // Return up to 6 timestamps (enough for 30-min sync window at 6-min frequency)
     return {
-      next1: arrivals[0] !== undefined ? arrivals[0] : -1,
-      next2: arrivals[1] !== undefined ? arrivals[1] : -1
+      timestamp1: arrivals[0] ? arrivals[0].timestamp : 0,
+      timestamp2: arrivals[1] ? arrivals[1].timestamp : 0,
+      timestamp3: arrivals[2] ? arrivals[2].timestamp : 0,
+      timestamp4: arrivals[3] ? arrivals[3].timestamp : 0,
+      timestamp5: arrivals[4] ? arrivals[4].timestamp : 0,
+      timestamp6: arrivals[5] ? arrivals[5].timestamp : 0
     };
   } catch (e) {
     console.log('Error parsing MUNI predictions: ' + e);
@@ -856,14 +888,24 @@ function sendDataToWatch(location, weatherData, aqiData, tideData, muniData, pol
     message.CONFIG_SHOW_SUNRISE = CONFIG.SHOW_SUNRISE ? 1 : 0;
     message.CONFIG_INVERT = CONFIG.INVERT ? 1 : 0;
 
-  // MUNI data
+  // MUNI data (timestamps for next 6 buses)
   if (muniData) {
-    message.MUNI_NEXT_1 = muniData.next1;
-    message.MUNI_NEXT_2 = muniData.next2;
-    console.log('MUNI predictions added to message: ' + muniData.next1 + ', ' + muniData.next2);
+    message.MUNI_TIMESTAMP_1 = muniData.timestamp1;
+    message.MUNI_TIMESTAMP_2 = muniData.timestamp2;
+    message.MUNI_TIMESTAMP_3 = muniData.timestamp3;
+    message.MUNI_TIMESTAMP_4 = muniData.timestamp4;
+    message.MUNI_TIMESTAMP_5 = muniData.timestamp5;
+    message.MUNI_TIMESTAMP_6 = muniData.timestamp6;
+    console.log('MUNI timestamps sent: ' + [muniData.timestamp1, muniData.timestamp2,
+                muniData.timestamp3, muniData.timestamp4, muniData.timestamp5,
+                muniData.timestamp6].join(', '));
   } else {
-    message.MUNI_NEXT_1 = -1;  // -1 indicates no data
-    message.MUNI_NEXT_2 = -1;
+    message.MUNI_TIMESTAMP_1 = 0;  // 0 indicates no data
+    message.MUNI_TIMESTAMP_2 = 0;
+    message.MUNI_TIMESTAMP_3 = 0;
+    message.MUNI_TIMESTAMP_4 = 0;
+    message.MUNI_TIMESTAMP_5 = 0;
+    message.MUNI_TIMESTAMP_6 = 0;
   }
 
   // Pollen data
